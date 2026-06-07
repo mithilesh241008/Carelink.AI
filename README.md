@@ -1,7 +1,7 @@
 # 🏥 CareLink AI
 
 AI-Powered Rural Healthcare Assistant built with Streamlit and Google Gemini.
-
+https://carelinkai.streamlit.app
 ## Features
 
 - Symptom Analysis
