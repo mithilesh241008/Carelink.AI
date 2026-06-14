@@ -17,7 +17,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 # Page Configuration
 # -------------------------
 st.set_page_config(
-    page_title="CareLink AI v2.1",
+    page_title="CareLink AI v2.2",
     page_icon="🏥",
     layout="wide"
 )
@@ -39,7 +39,7 @@ client = genai.Client(api_key=api_key)
 # -------------------------
 with st.sidebar:
 
-    st.title("🏥 CareLink AI v2.1")
+    st.title("🏥 CareLink AI v2.2")
 
     st.markdown("""
 ### Your Personal Health Companion
@@ -56,6 +56,8 @@ CareLink helps users with:
 
 ✅ Voice Responses
 
+✅ Fitness Coaching
+
 ⚠️ Not a substitute for professional medical care.
 """)
 
@@ -71,19 +73,54 @@ CareLink helps users with:
         [
             "Health Mentor",
             "Symptom Analysis",
-            "Health Education"
+            "Health Education",
+            "Fitness Coach"
         ]
     )
+
+    st.markdown("---")
+
+    st.subheader("📊 BMI Calculator")
+
+    height_cm = st.number_input(
+        "Height (cm)",
+        min_value=100,
+        max_value=250,
+        value=170
+    )
+
+    weight_kg = st.number_input(
+        "Weight (kg)",
+        min_value=20,
+        max_value=300,
+        value=70
+    )
+
+    if st.button("Calculate BMI"):
+
+        bmi = weight_kg / ((height_cm / 100) ** 2)
+
+        if bmi < 18.5:
+            category = "Underweight"
+        elif bmi < 25:
+            category = "Healthy Weight"
+        elif bmi < 30:
+            category = "Overweight"
+        else:
+            category = "Obese"
+
+        st.success(f"BMI: {bmi:.1f}")
+        st.info(f"Category: {category}")
 
 # -------------------------
 # Main Header
 # -------------------------
-st.title("🏥 CareLink AI v2.1")
+st.title("🏥 CareLink AI v2.2")
 
 st.markdown("""
 ### Your Personal Health Companion
 
-Your trusted AI health copilot for wellness, education, and everyday health guidance.
+Your trusted AI health copilot for wellness, education, fitness, and everyday health guidance.
 """)
 
 # -------------------------
@@ -107,7 +144,6 @@ user_input = st.chat_input("Ask CareLink anything...")
 
 if user_input:
 
-    # Show user message
     st.session_state.messages.append(
         {
             "role": "user",
@@ -118,24 +154,19 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # -------------------------
     # Language Settings
-    # -------------------------
     if language == "Tamil":
         language_prompt = (
             "Respond completely in Tamil using simple language."
         )
         voice_lang = "ta"
-
     else:
         language_prompt = (
             "Respond completely in English using simple language."
         )
         voice_lang = "en"
 
-    # -------------------------
     # Mode Settings
-    # -------------------------
     if mode == "Health Mentor":
 
         mode_prompt = """
@@ -170,7 +201,7 @@ Do not prescribe medications.
 Do not provide a definitive diagnosis.
 """
 
-    else:
+    elif mode == "Health Education":
 
         mode_prompt = """
 You are CareLink AI.
@@ -180,6 +211,25 @@ Act as a health educator.
 Explain health topics clearly and simply.
 
 Do not diagnose diseases.
+"""
+
+    else:
+
+        mode_prompt = """
+You are CareLink AI Fitness Coach.
+
+Help users with:
+- Workout routines
+- Muscle gain
+- Fat loss
+- Strength training
+- Nutrition basics
+- Recovery
+
+Provide practical fitness advice.
+
+Do not recommend steroids.
+Do not recommend dangerous dieting methods.
 """
 
     prompt = f"""
@@ -202,7 +252,6 @@ User Question:
 
         ai_response = response.text
 
-        # Store assistant response
         st.session_state.messages.append(
             {
                 "role": "assistant",
@@ -210,7 +259,6 @@ User Question:
             }
         )
 
-        # Display assistant response
         with st.chat_message("assistant"):
 
             st.markdown(ai_response)
@@ -218,7 +266,7 @@ User Question:
             try:
 
                 tts = gTTS(
-                    text=ai_response,
+                    text=ai_response[:2500],
                     lang=voice_lang
                 )
 
@@ -250,5 +298,5 @@ st.info(
 )
 
 st.caption(
-    "CareLink AI v2.1 • Built by Mithilesh"
+    "CareLink AI v2.2 • Built by mithilesh"
 )
