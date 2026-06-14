@@ -10,14 +10,13 @@ from gtts import gTTS
 # Load Environment Variables
 # -------------------------
 load_dotenv()
-
 api_key = os.getenv("GEMINI_API_KEY")
 
 # -------------------------
 # Page Configuration
 # -------------------------
 st.set_page_config(
-    page_title="CareLink AI v2.2",
+    page_title="CareLink AI v2.3",
     page_icon="🏥",
     layout="wide"
 )
@@ -39,24 +38,20 @@ client = genai.Client(api_key=api_key)
 # -------------------------
 with st.sidebar:
 
-    st.title("🏥 CareLink AI v2.2")
+    st.title("🏥 CareLink AI v2.3")
 
     st.markdown("""
 ### Your Personal Health Companion
 
 CareLink helps users with:
 
-✅ Symptom Guidance
-
-✅ Health Education
-
-✅ Wellness Advice
-
-✅ Rural Healthcare Support
-
-✅ Voice Responses
-
-✅ Fitness Coaching
+✅ Symptom Guidance  
+✅ Health Education  
+✅ Wellness Advice  
+✅ Rural Healthcare Support  
+✅ Voice Responses  
+✅ Fitness Coaching  
+✅ AI Fitness Planner  
 
 ⚠️ Not a substitute for professional medical care.
 """)
@@ -74,7 +69,8 @@ CareLink helps users with:
             "Health Mentor",
             "Symptom Analysis",
             "Health Education",
-            "Fitness Coach"
+            "Fitness Coach",
+            "Fitness Planner"
         ]
     )
 
@@ -97,7 +93,6 @@ CareLink helps users with:
     )
 
     if st.button("Calculate BMI"):
-
         bmi = weight_kg / ((height_cm / 100) ** 2)
 
         if bmi < 18.5:
@@ -115,7 +110,7 @@ CareLink helps users with:
 # -------------------------
 # Main Header
 # -------------------------
-st.title("🏥 CareLink AI v2.2")
+st.title("🏥 CareLink AI v2.3")
 
 st.markdown("""
 ### Your Personal Health Companion
@@ -124,179 +119,175 @@ Your trusted AI health copilot for wellness, education, fitness, and everyday he
 """)
 
 # -------------------------
-# Session State
+# FITNESS PLANNER
+# -------------------------
+if mode == "Fitness Planner":
+
+    st.markdown("---")
+    st.header("🏋️ AI Fitness Planner")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        age = st.number_input("Age", 13, 100, 18)
+        gender = st.selectbox("Gender", ["Male", "Female"])
+        height = st.number_input("Height (cm)", 100, 250, 170)
+        weight = st.number_input("Weight (kg)", 20, 300, 70)
+
+    with col2:
+        goal = st.selectbox(
+            "Goal",
+            ["Muscle Gain", "Fat Loss", "Body Recomposition", "Athletic Performance"]
+        )
+
+        experience = st.selectbox(
+            "Experience",
+            ["Beginner", "Intermediate", "Advanced"]
+        )
+
+        location = st.selectbox("Workout Location", ["Home", "Gym"])
+
+        days = st.slider("Training Days/Week", 3, 7, 5)
+
+    if st.button("🚀 Generate Fitness Plan"):
+
+        prompt = f"""
+You are a professional fitness coach AI.
+
+Create a complete structured fitness plan.
+
+User Data:
+Age: {age}
+Gender: {gender}
+Height: {height} cm
+Weight: {weight} kg
+Goal: {goal}
+Experience: {experience}
+Location: {location}
+Training Days: {days}
+
+Provide:
+- Weekly workout split
+- Daily workout plan
+- Calories target
+- Protein, carbs, fats
+- Sample diet plan
+- Recovery advice
+
+Keep it simple and practical.
+"""
+
+        try:
+            with st.spinner("Generating plan..."):
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt
+                )
+
+            st.success("Fitness Plan Ready")
+            st.markdown(response.text)
+
+            # Voice output
+            try:
+                tts = gTTS(text=response.text[:2500], lang="en")
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
+                    tts.save(f.name)
+                    st.audio(f.name)
+
+            except:
+                st.warning("Voice output unavailable.")
+
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# -------------------------
+# SESSION STATE
 # -------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # -------------------------
-# Display Chat History
+# CHAT HISTORY
 # -------------------------
 for msg in st.session_state.messages:
-
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 # -------------------------
-# Chat Input
+# CHAT INPUT
 # -------------------------
 user_input = st.chat_input("Ask CareLink anything...")
 
 if user_input:
 
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": user_input
-        }
-    )
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Language Settings
+    # Language
     if language == "Tamil":
-        language_prompt = (
-            "Respond completely in Tamil using simple language."
-        )
+        lang_prompt = "Respond in simple Tamil."
         voice_lang = "ta"
     else:
-        language_prompt = (
-            "Respond completely in English using simple language."
-        )
+        lang_prompt = "Respond in simple English."
         voice_lang = "en"
 
-    # Mode Settings
+    # Mode prompts
     if mode == "Health Mentor":
-
-        mode_prompt = """
-You are CareLink AI.
-
-Act as a friendly health mentor.
-
-Help users improve:
-- Sleep
-- Nutrition
-- Exercise
-- Hydration
-- Healthy habits
-
-Do not prescribe medication.
-Do not diagnose diseases.
-"""
+        mode_prompt = "Act as a friendly health mentor."
 
     elif mode == "Symptom Analysis":
-
-        mode_prompt = """
-You are CareLink AI.
-
-Analyze symptoms and provide:
-
-1. Possible causes
-2. Home care suggestions
-3. When to see a doctor
-4. Emergency warning signs
-
-Do not prescribe medications.
-Do not provide a definitive diagnosis.
-"""
+        mode_prompt = "Analyze symptoms and suggest possible causes and care."
 
     elif mode == "Health Education":
+        mode_prompt = "Explain health topics simply."
 
-        mode_prompt = """
-You are CareLink AI.
-
-Act as a health educator.
-
-Explain health topics clearly and simply.
-
-Do not diagnose diseases.
-"""
+    elif mode == "Fitness Coach":
+        mode_prompt = "Act as a fitness coach giving workout advice."
 
     else:
+        mode_prompt = "Help with fitness planning and training structure."
 
-        mode_prompt = """
-You are CareLink AI Fitness Coach.
-
-Help users with:
-- Workout routines
-- Muscle gain
-- Fat loss
-- Strength training
-- Nutrition basics
-- Recovery
-
-Provide practical fitness advice.
-
-Do not recommend steroids.
-Do not recommend dangerous dieting methods.
-"""
-
-    prompt = f"""
+    final_prompt = f"""
 {mode_prompt}
 
-{language_prompt}
+{lang_prompt}
 
-User Question:
-{user_input}
+User: {user_input}
 """
 
     try:
-
         with st.spinner("Thinking..."):
-
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt
+                contents=final_prompt
             )
 
-        ai_response = response.text
+        answer = response.text
 
-        st.session_state.messages.append(
-            {
-                "role": "assistant",
-                "content": ai_response
-            }
-        )
+        st.session_state.messages.append({"role": "assistant", "content": answer})
 
         with st.chat_message("assistant"):
-
-            st.markdown(ai_response)
+            st.markdown(answer)
 
             try:
+                tts = gTTS(text=answer[:2500], lang=voice_lang)
 
-                tts = gTTS(
-                    text=ai_response[:2500],
-                    lang=voice_lang
-                )
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as f:
+                    tts.save(f.name)
+                    st.audio(f.name)
 
-                with tempfile.NamedTemporaryFile(
-                    delete=False,
-                    suffix=".mp3"
-                ) as temp_audio:
-
-                    tts.save(temp_audio.name)
-
-                    st.audio(
-                        temp_audio.name,
-                        format="audio/mp3"
-                    )
-
-            except Exception:
+            except:
                 st.warning("Voice output unavailable.")
 
     except Exception as e:
         st.error(f"Error: {e}")
 
 # -------------------------
-# Footer
+# FOOTER
 # -------------------------
 st.markdown("---")
-
-st.info(
-    "⚠️ CareLink AI provides educational information only and is not a substitute for professional medical advice."
-)
-
-st.caption(
-    "CareLink AI v2.2 • Built by mithilesh"
-)
+st.info("⚠️ Educational purposes only. Not medical advice.")
+st.caption("CareLink AI v2.3 • Built by Mithilesh ")
